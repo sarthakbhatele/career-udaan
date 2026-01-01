@@ -212,18 +212,18 @@ body {
 /* for career udaan logo */
 @keyframes glow {
   0% {
-    filter: drop-shadow(0 0 2px #294488) brightness(1.4);
+    filter: drop-shadow(0 0 4px #363637) brightness(1.3);
   }
 
   50% {
-    filter: drop-shadow(0 0 5px #294488) brightness(1.1);
+    filter: drop-shadow(0 0 10px #c5c7cc) brightness(1.15);
   }
 
   100% {
-    filter: drop-shadow(0 0 2px #294488) brightness(1.4);
+    filter: drop-shadow(0 0 4px #363637) brightness(1.3);
   }
 }
 
 .animate-glow {
-  animation: glow 2s infinite alternate ease-in-out;
+  animation: glow 4s infinite alternate ease-in-out;
 }
