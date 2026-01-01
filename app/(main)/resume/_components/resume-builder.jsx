@@ -170,7 +170,7 @@ export default function ResumeBuilder({ initialContent }) {
               </>
             )}
           </Button>
-          
+
           <Button onClick={generatePDF} disabled={isGenerating}>
             {isGenerating ? (
               <>
