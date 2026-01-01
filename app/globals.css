@@ -81,6 +81,80 @@ body {
   .gradient-title {
     @apply gradient font-extrabold tracking-tighter text-transparent bg-clip-text pb-2 pr-2;
   }
+
+  /* Futuristic glow effects */
+  .glow-box {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .glow-box:hover {
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+  }
+
+  /* Parallax depth */
+  .parallax-slow {
+    transform: translateZ(0);
+    transition: transform 0.3s ease-out;
+  }
+
+  /* Floating animation */
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  /* Gradient border */
+  .gradient-border {
+    position: relative;
+    background: linear-gradient(145deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+    border: 1px solid transparent;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(145deg, rgba(99, 102, 241, 0.5), rgba(139, 92, 246, 0.5));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Shimmer effect */
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%);
+    background-size: 1000px 100%;
+    animation: shimmer 3s infinite;
+  }
+
 }
 
 .hero-image-wrapper {
@@ -121,6 +195,18 @@ body {
   width: 100%;
   height: 100%;
   background: radial-gradient(circle, transparent, rgba(0, 0, 0, 0.9));
+}
+
+/* Enhanced grid background with depth */
+.grid-background::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.1), transparent 50%);
+  pointer-events: none;
 }
 
 /* for career udaan logo */

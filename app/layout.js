@@ -19,6 +19,8 @@ export default function RootLayout({ children }) {
       appearance={{
         baseTheme: dark,
       }}
+      afterSignInUrl="/onboarding"
+      afterSignUpUrl="/onboarding"
     >
       <html lang="en" suppressHydrationWarning>
         <head>
@@ -33,7 +35,7 @@ export default function RootLayout({ children }) {
           >
             <Header />
             <main className="min-h-screen">{children}</main>
-            
+
             <Toaster richColors />
 
             <footer className="bg-muted/50 py-12">
