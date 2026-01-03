@@ -7,26 +7,60 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ADD: Plan enum
+enum Plan {
+  FREE
+  PRO
+}
+
 model User {
   id            String    @id @default(uuid())
-  clerkUserId   String    @unique // clerk user id
+  clerkUserId   String    @unique
   email         String    @unique
   name          String?
   imageUrl      String?
-  industry      String?    // Combined industry-subindustry (e.g., "tech-software-development")
-  industryInsight IndustryInsight? @relation(fields: [industry], references: [industry])
+  
+  // NEW: Plan field
+  plan          Plan      @default(FREE)
+  
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
-  // Profile fields
-  bio           String?
-  experience    Int?      // Years of experience
   
-  // Relations
-  skills        String[]  // Array of skills
+  // Multi-domain support (from Phase 3)
+  domains       UserDomain[]
+  activeDomainId String?
+  activeDomain   UserDomain? @relation("ActiveDomain", fields: [activeDomainId], references: [id])
+  
+  // Existing relations
   assessments   Assessment[]
   resume        Resume?
   coverLetter   CoverLetter[]
+  
+  // NEW: Future-proofing for Resume Talker
+  conversations ResumeTalkerConversation[]
+}
+
+// UserDomain (unchanged from Phase 3)
+model UserDomain {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  industry      String
+  bio           String?
+  experience    Int?
+  skills        String[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // FIXED: Added relation name
+  industryInsights IndustryInsight[]
+  activeForUser User[]   @relation("ActiveDomain")
+  
+  @@unique([userId, industry])
+  @@index([userId])
+  @@index([industry])
 }
 
 model Assessment {
@@ -74,8 +108,8 @@ model IndustryInsight {
   id            String    @id @default(cuid())
   industry      String    @unique  // The industry this data belongs to (e.g., "tech-software-development")
   
-  // Users in this industry
-  users         User[]
+  // FIXED: Added opposite relation field
+  userDomains   UserDomain[]
   
   // Salary data
   salaryRanges  Json[]    // Array of { role: string, min: float, max: float, median: float, location: string? }
@@ -96,4 +130,32 @@ model IndustryInsight {
   nextUpdate    DateTime  // Scheduled update time
 
   @@index([industry])
+}
+
+// NEW: Resume Talker (FUTURE - Schema only, NO logic yet)
+model ResumeTalkerConversation {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  messages      ResumeTalkerMessage[]
+  
+  @@index([userId])
+  @@index([createdAt]) // For monthly limits
+}
+
+model ResumeTalkerMessage {
+  id              String    @id @default(cuid())
+  conversationId  String
+  conversation    ResumeTalkerConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  role            String    // "user" | "assistant"
+  content         String    @db.Text
+  createdAt       DateTime  @default(now())
+  
+  @@index([conversationId])
 }

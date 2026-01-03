@@ -1,5 +1,6 @@
 "use server";
 
+import { getActiveDomain } from "@/lib/getActiveDomain";
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -8,22 +9,11 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 export async function generateQuiz() {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
-
-  const user = await db.user.findUnique({
-    where: { clerkUserId: userId },
-    select: {
-      industry: true,
-      skills: true,
-    },
-  });
-
-  if (!user) throw new Error("User not found");
+  const domain = await getActiveDomain();
 
   const prompt = `
-    Generate 10 technical interview questions for a ${user.industry
-    } professional${user.skills?.length ? ` with expertise in ${user.skills.join(", ")}` : ""
+    Generate 10 technical interview questions for a ${domain.industry
+    } professional${domain.skills?.length ? ` with expertise in ${domain.skills.join(", ")}` : ""
     }.
     
     Each question should be multiple choice with 4 options.
@@ -61,7 +51,6 @@ export async function generateQuiz() {
     }
 
     return uniqueQuestions;
-    // return quiz.questions;
   } catch (error) {
     console.error("Error generating quiz:", error);
     throw new Error("Failed to generate quiz questions");
@@ -77,6 +66,8 @@ export async function saveQuizResult(questions, answers, score) {
   });
 
   if (!user) throw new Error("User not found");
+
+  const domain = await getActiveDomain();
 
   const questionResults = questions.map((q, index) => ({
     question: q.question,
@@ -100,7 +91,7 @@ export async function saveQuizResult(questions, answers, score) {
       .join("\n\n");
 
     const improvementPrompt = `
-      The user got the following ${user.industry} technical interview questions wrong:
+      The user got the following ${domain.industry} technical interview questions wrong:
 
       ${wrongQuestionsText}
 
@@ -112,12 +103,10 @@ export async function saveQuizResult(questions, answers, score) {
 
     try {
       const tipResult = await model.generateContent(improvementPrompt);
-
       improvementTip = tipResult.response.text().trim();
       console.log(improvementTip);
     } catch (error) {
       console.error("Error generating improvement tip:", error);
-      // Continue without improvement tip if generation fails
     }
   }
 

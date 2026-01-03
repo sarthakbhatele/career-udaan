@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition, useState } from "react";
-import { Loader2, LayoutDashboard, FileText, PenBox, GraduationCap } from "lucide-react";
+import { Loader2, LayoutDashboard, FileText, PenBox, GraduationCap, Layers } from "lucide-react";
 import { Button } from "./ui/button";
 import { Button as MovingBorderButton } from "./ui/moving-border";
 import {
@@ -57,6 +57,21 @@ export function HeaderNav() {
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+
+                    // Add this to the dropdown menu items
+
+                    <DropdownMenuItem
+                        onClick={() => handleNavigation("/domains")}
+                        disabled={isPending}
+                        className="cursor-pointer"
+                    >
+                        {isPending && pendingRoute === "/domains" ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Layers className="h-4 w-4" /> 
+                        )}
+                        My Domains
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                         onClick={() => handleNavigation("/resume")}
                         disabled={isPending}
