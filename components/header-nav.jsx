@@ -58,7 +58,7 @@ export function HeaderNav() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
 
-                    // Add this to the dropdown menu items
+                  {  /*// Add this to the dropdown menu items*/}
 
                     <DropdownMenuItem
                         onClick={() => handleNavigation("/domains")}

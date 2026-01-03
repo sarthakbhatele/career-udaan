@@ -16,6 +16,7 @@ import {
   TrendingUp,
   TrendingDown,
   Brain,
+  Loader2,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -29,6 +30,55 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 const DashboardView = ({ insights }) => {
+
+  // Show loader while generating
+  if (insights.isGenerating) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Generating Industry Insights</CardTitle>
+            <CardDescription>
+              {insights.message}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Refresh Page
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state if failed (with retry info)
+  if (insights.generationStatus === "failed" && insights.error) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle>Generation Failed</CardTitle>
+            <CardDescription className="text-destructive">
+              {insights.message}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Error: {insights.error}
+            </p>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Try Refreshing
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Transform salary data for the chart
   const salaryData = insights.salaryRanges.map((range) => ({
     name: range.role,

@@ -52,11 +52,19 @@ export async function updateUser(data) {
         });
 
         if (!industryInsight) {
-          const insights = await generateAIInsights(data.industry);
+          // Create placeholder (no AI call here)
           industryInsight = await tx.industryInsight.create({
             data: {
               industry: data.industry,
-              ...insights,
+              salaryRanges: [],
+              growthRate: 0,
+              demandLevel: "Medium",
+              topSkills: [],
+              marketOutlook: "Neutral",
+              keyTrends: [],
+              recommendedSkills: [],
+              generationStatus: "pending",
+              lastAttemptAt: new Date(),
               nextUpdate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             },
           });
@@ -110,6 +118,13 @@ export async function updateUser(data) {
       { timeout: 20000 }
     );
 
+    // Trigger insight generation ONLY if domain is new
+    if (!existingDomain) {
+      await inngest.send({
+        name: "industry/generate",
+        data: { industry: data.industry },
+      });
+    }
     revalidatePath("/");
     revalidatePath("/dashboard");
     revalidatePath("/onboarding");

@@ -106,30 +106,28 @@ model CoverLetter {
 // Combined Industry Trends and Salary Insights
 model IndustryInsight {
   id            String    @id @default(cuid())
-  industry      String    @unique  // The industry this data belongs to (e.g., "tech-software-development")
+  industry      String    @unique
   
-  // FIXED: Added opposite relation field
   userDomains   UserDomain[]
   
-  // Salary data
-  salaryRanges  Json[]    // Array of { role: string, min: float, max: float, median: float, location: string? }
-  
-  // Industry trends
-  growthRate    Float     // Industry growth rate
-  demandLevel   String    // "High", "Medium", "Low"
-  topSkills     String[]  // Most in-demand skills
-  
-  // Market conditions
-  marketOutlook String    // "Positive", "Neutral", "Negative"
-  keyTrends     String[]  // Array of current industry trends
-  
-  // Learning suggestions
-  recommendedSkills String[]  // Skills recommended for the industry
+  salaryRanges  Json[]
+  growthRate    Float
+  demandLevel   String
+  topSkills     String[]
+  marketOutlook String
+  keyTrends     String[]
+  recommendedSkills String[]
   
   lastUpdated   DateTime  @default(now())
-  nextUpdate    DateTime  // Scheduled update time
-
+  nextUpdate    DateTime
+  
+  // Generation tracking
+  generationStatus String   @default("pending") // "pending" | "generating" | "completed" | "failed"
+  generationError  String?
+  lastAttemptAt    DateTime @default(now()) // NEW: Prevent retry storms
+  
   @@index([industry])
+  @@index([generationStatus])
 }
 
 // NEW: Resume Talker (FUTURE - Schema only, NO logic yet)
