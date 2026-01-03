@@ -1,6 +1,7 @@
 "use server";
 
 import { getActiveDomain } from "@/lib/getActiveDomain";
+import { inngest } from "@/lib/inngest/client";
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -11,50 +12,47 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 export async function generateQuiz() {
   const domain = await getActiveDomain();
 
-  const prompt = `
-    Generate 10 technical interview questions for a ${domain.industry
-    } professional${domain.skills?.length ? ` with expertise in ${domain.skills.join(", ")}` : ""
-    }.
-    
-    Each question should be multiple choice with 4 options.
-    
-    Return the response in this JSON format only, no additional text:
-    {
-      "questions": [
-        {
-          "question": "string",
-          "options": ["string", "string", "string", "string"],
-          "correctAnswer": "string",
-          "explanation": "string"
-        }
-      ]
-    }
-  `;
+  // Unique cache key per domain + difficulty (extendable later)
+  const taskKey = `${domain.id}:basic`;
 
-  try {
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
-    const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
-    const quiz = JSON.parse(cleanedText);
+  // 1️⃣ DB-first read (cache)
+  const cached = await db.rAGOutput.findUnique({
+    where: {
+      taskType_taskKey: {
+        taskType: "quiz",
+        taskKey,
+      },
+    },
+  });
 
-    // Ensure uniqueness
-    const uniqueQuestions = [];
-    const seenQuestions = new Set();
-
-    for (const q of quiz.questions) {
-      const questionKey = q.question.toLowerCase().trim();
-      if (!seenQuestions.has(questionKey)) {
-        seenQuestions.add(questionKey);
-        uniqueQuestions.push(q);
-      }
-    }
-
-    return uniqueQuestions;
-  } catch (error) {
-    console.error("Error generating quiz:", error);
-    throw new Error("Failed to generate quiz questions");
+  if (
+    cached &&
+    (!cached.expiresAt || cached.expiresAt > new Date())
+  ) {
+    return cached.content.questions;
   }
+
+  // 2️⃣ Trigger background generation (NON-blocking)
+  await inngest.send({
+    name: "rag/generate",
+    data: {
+      taskType: "quiz",
+      taskKey,
+      domainId: domain.id,
+      taskParams: {
+        questionCount: 10,
+        difficulty: "basic",
+        skills: domain.skills ?? [],
+        industry: domain.industry,
+      },
+    },
+  });
+
+  // 3️⃣ Immediate safe response (UI shows loader/skeleton)
+  return {
+    generating: true,
+    message: "Quiz is being generated. Please refresh shortly.",
+  };
 }
 
 export async function saveQuizResult(questions, answers, score) {
