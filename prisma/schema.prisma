@@ -189,19 +189,18 @@ model RAGOutput {
   @@index([expiresAt])
 }
 
-// NEW: Context chunks for retrieval
 model ContextChunk {
-  id            String   @id @default(cuid())
-  
-  sourceType    String   // "industry_insight", "quiz_explanation", "user_bio"
-  sourceId      String   // Reference ID (e.g., IndustryInsight.id)
-  
-  content       String   @db.Text
-  embedding     Float[]  // For vector search
-  
-  metadata      Json?    // Flexible (industry, skills, role, etc.)
-  
-  createdAt     DateTime @default(now())
-  
-  @@index([sourceType, sourceId])
+  id         String   @id @default(cuid())
+
+  sourceType String
+  sourceId   String
+
+  content    String   @db.Text
+  embedding  Float[]   // keep optional until embeddings phase
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@unique([sourceType, sourceId])   // REQUIRED for upsert
+  @@index([sourceType])
 }

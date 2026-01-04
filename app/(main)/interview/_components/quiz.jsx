@@ -15,10 +15,11 @@ import { Label } from "@/components/ui/label";
 import { generateQuiz, saveQuizResult } from "@/actions/interview";
 import QuizResult from "./quiz-result";
 import useFetch from "@/hooks/use-fetch";
-import { BarLoader } from "react-spinners";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function Quiz() {
+  const router = useRouter();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
 
@@ -83,8 +84,35 @@ export default function Quiz() {
     setResultData(null);
   };
 
-  if (generatingQuiz) {
-    return <BarLoader className="mt-4" width={"100%"} color="gray" />;
+  // if (generatingQuiz) {
+  //   return <BarLoader className="mt-4" width={"100%"} color="gray" />;
+  // }
+
+
+  // NEW: Handle "generating" state from cached response
+  if (quizData?.generating) {
+    return (
+      <Card className="mx-2">
+        <CardHeader>
+          <CardTitle>Generating Your Quiz...</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-muted-foreground">{quizData.message}</p>
+            <Button
+              onClick={() => {
+                generateQuizFn(); // Retry
+                router.refresh();
+              }}
+              variant="outline"
+            >
+              Refresh
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   // Show results if quiz is completed
@@ -96,7 +124,28 @@ export default function Quiz() {
     );
   }
 
-  if (!quizData) {
+  // if (!quizData) {
+  //   return (
+  //     <Card className="mx-2">
+  //       <CardHeader>
+  //         <CardTitle>Ready to test your knowledge?</CardTitle>
+  //       </CardHeader>
+  //       <CardContent>
+  //         <p className="text-muted-foreground">
+  //           This quiz contains 10 questions specific to your industry and
+  //           skills. Take your time and choose the best answer for each question.
+  //         </p>
+  //       </CardContent>
+  //       <CardFooter>
+  //         <Button onClick={generateQuizFn} className="w-full">
+  //           Start Quiz
+  //         </Button>
+  //       </CardFooter>
+  //     </Card>
+  //   );
+  // }
+
+  if (!quizData || !Array.isArray(quizData)) {
     return (
       <Card className="mx-2">
         <CardHeader>
@@ -104,8 +153,7 @@ export default function Quiz() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            This quiz contains 10 questions specific to your industry and
-            skills. Take your time and choose the best answer for each question.
+            This quiz contains 10 questions specific to your industry and skills.
           </p>
         </CardContent>
         <CardFooter>
