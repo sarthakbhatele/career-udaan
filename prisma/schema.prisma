@@ -38,6 +38,8 @@ model User {
   
   // NEW: Future-proofing for Resume Talker
   conversations ResumeTalkerConversation[]
+  questionHistory UserQuestionHistory[]
+  quizAttempts    QuizAttempt[] 
 }
 
 // UserDomain (unchanged from Phase 3)
@@ -162,30 +164,29 @@ model ResumeTalkerMessage {
 model RAGOutput {
   id            String   @id @default(cuid())
   
-  // Task identification
-  taskType      String   // "quiz", "insight", "resume_feedback", "roadmap"
-  taskKey       String   // Unique per task (e.g., "quiz:domainId:difficulty")
+  taskType      String   // "question_pool"
+  taskKey       String   // "domainId:difficulty"
   
-  // Context used
   domainId      String?
-  userId        String?
   
-  // Output
-  content       Json     // Structured output (questions, analysis, etc.)
-  embedding     Float[] // For similarity search (future)
+  // Question pool structure
+  content       Json     // { "questions": [...], "skillCoverage": {...} }
   
   // Metadata
+  questionCount Int      @default(0)
+  skillSet      String[] // Skills covered
+  difficulty    String   // "easy" | "medium" | "hard"
+  
   promptTokens  Int?
   completionTokens Int?
   model         String?
   
-  // Lifecycle
   createdAt     DateTime @default(now())
-  expiresAt     DateTime? // Auto-invalidate stale outputs
+  expiresAt     DateTime?
+  version       Int      @default(1) // Increment when regenerating
   
   @@unique([taskType, taskKey])
   @@index([taskType, domainId])
-  @@index([userId])
   @@index([expiresAt])
 }
 
@@ -203,4 +204,32 @@ model ContextChunk {
 
   @@unique([sourceType, sourceId])   // REQUIRED for upsert
   @@index([sourceType])
+}
+
+model UserQuestionHistory {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  domainId      String
+  questionId    String   // Hash of question text
+  questionText  String   @db.Text
+  embedding     Float[]  // For semantic similarity
+  
+  askedAt       DateTime @default(now())
+  
+  @@unique([userId, questionId])
+  @@index([userId, domainId])
+}
+
+// NEW: Track daily quiz attempts
+model QuizAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  domainId  String
+  attemptDate DateTime @default(now())
+  
+  @@index([userId, attemptDate])
 }

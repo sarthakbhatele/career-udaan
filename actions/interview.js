@@ -1,7 +1,129 @@
+// "use server";
+
+// import { getActiveDomain } from "@/lib/getActiveDomain";
+// import { inngest } from "@/lib/inngest/client";
+// import { db } from "@/lib/prisma";
+// import { auth } from "@clerk/nextjs/server";
+// import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+// export async function generateQuiz() {
+//   const domain = await getActiveDomain();
+
+//   // Unique cache key per domain + difficulty (extendable later)
+//   const taskKey = `${domain.id}:basic`;
+
+//   // 1️⃣ DB-first read (cache)
+//   const cached = await db.rAGOutput.findUnique({
+//     where: {
+//       taskType_taskKey: {
+//         taskType: "quiz",
+//         taskKey,
+//       },
+//     },
+//   });
+
+//   if (
+//     cached &&
+//     (!cached.expiresAt || cached.expiresAt > new Date())
+//   ) {
+//     return cached.content.questions;
+//   }
+
+//   // 2️⃣ Trigger background generation (NON-blocking)
+//   await inngest.send({
+//     name: "rag/generate",
+//     data: {
+//       taskType: "quiz",
+//       taskKey,
+//       domainId: domain.id,
+//       taskParams: {
+//         questionCount: 10,
+//         difficulty: "basic",
+//         skills: domain.skills ?? [],
+//         industry: domain.industry,
+//       },
+//     },
+//   });
+
+//   // 3️⃣ Immediate safe response (UI shows loader/skeleton)
+//   return {
+//     generating: true,
+//     message: "Quiz is being generated. Please refresh shortly.",
+//   };
+// }
+
+// import { sampleQuestionsForUser, generateQuestionPool } from "@/lib/rag/question-pool";
+// import { inngest } from "@/lib/inngest/client";
+// import { getActiveDomain } from "@/lib/getActiveDomain";
+// import { db } from "@/lib/prisma";
+// import { auth } from "@clerk/nextjs/server";
+// import { GoogleGenerativeAI } from "@google/generative-ai";
+// import { retrieveContext } from "@/lib/rag/core";
+
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+// export async function generateQuiz(difficulty = "medium") {
+//   const { userId } = await auth();
+//   const user = await db.user.findUnique({ where: { clerkUserId: userId } });
+//   const domain = await getActiveDomain();
+
+//   // Check if pool exists
+//   const pool = await db.rAGOutput.findUnique({
+//     where: {
+//       taskType_taskKey: {
+//         taskType: "question_pool",
+//         taskKey: `${domain.id}:${difficulty}`,
+//       },
+//     },
+//   });
+
+//   // If pool doesn't exist or expired, trigger generation
+//   if (!pool || (pool.expiresAt && pool.expiresAt < new Date())) {
+//     await inngest.send({
+//       name: "quiz/generate-pool",
+//       data: {
+//         poolKey: `${domain.id}:${difficulty}`,
+//         domainId: domain.id,
+//         difficulty,
+//         skills: domain.skills || [],
+//       },
+//     });
+
+//     return {
+//       generating: true,
+//       message: "Building question pool. Refresh in 30 seconds.",
+//     };
+//   }
+
+//   // Sample unseen questions
+//   const questions = await sampleQuestionsForUser({
+//     userId: user.id,
+//     domainId: domain.id,
+//     difficulty,
+//     count: 10,
+//   });
+
+//   if (questions.length < 10) {
+//     return {
+//       generating: true,
+//       message: "Expanding question pool for more variety. Try again shortly.",
+//     };
+//   }
+
+//   return questions;
+// }
+
+
 "use server";
 
-import { getActiveDomain } from "@/lib/getActiveDomain";
+import { sampleQuestionsForUser } from "@/lib/rag/question-pool";
+import { checkDailyQuizLimit, recordQuizAttempt } from "@/lib/rag/quiz-limits";
 import { inngest } from "@/lib/inngest/client";
+import { getActiveDomain } from "@/lib/getActiveDomain";
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -9,51 +131,64 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-export async function generateQuiz() {
+export async function generateQuiz(difficulty = "medium") {
+  const { userId } = await auth();
+  const user = await db.user.findUnique({ where: { clerkUserId: userId } });
   const domain = await getActiveDomain();
 
-  // Unique cache key per domain + difficulty (extendable later)
-  const taskKey = `${domain.id}:basic`;
+  // 1. Check daily limit
+  const limitCheck = await checkDailyQuizLimit(user.id);
 
-  // 1️⃣ DB-first read (cache)
-  const cached = await db.rAGOutput.findUnique({
-    where: {
-      taskType_taskKey: {
-        taskType: "quiz",
-        taskKey,
-      },
-    },
-  });
-
-  if (
-    cached &&
-    (!cached.expiresAt || cached.expiresAt > new Date())
-  ) {
-    return cached.content.questions;
+  if (!limitCheck.canAttempt) {
+    return {
+      error: true,
+      message: `Daily limit reached (${limitCheck.limit} quizzes/day). Try again tomorrow.`,
+      attemptsToday: limitCheck.attemptsToday,
+      remaining: 0,
+    };
   }
 
-  // 2️⃣ Trigger background generation (NON-blocking)
-  await inngest.send({
-    name: "rag/generate",
-    data: {
-      taskType: "quiz",
-      taskKey,
+  // 2. Try to sample questions
+  try {
+    const questions = await sampleQuestionsForUser({
+      userId: user.id,
       domainId: domain.id,
-      taskParams: {
-        questionCount: 10,
-        difficulty: "basic",
-        skills: domain.skills ?? [],
-        industry: domain.industry,
-      },
-    },
-  });
+      difficulty,
+    });
 
-  // 3️⃣ Immediate safe response (UI shows loader/skeleton)
-  return {
-    generating: true,
-    message: "Quiz is being generated. Please refresh shortly.",
-  };
+    await recordQuizAttempt(user.id, domain.id);
+
+    // ✅ CHANGED: Always return consistent shape
+    return {
+      questions,
+      remaining: limitCheck.remaining - 1, // -1 because we just recorded attempt
+    };
+  } catch (error) {
+    if (error.message === "POOL_NOT_READY" || error.message === "POOL_EXHAUSTED") {
+      await inngest.send({
+        name: "quiz/expand-pool",
+        data: {
+          poolKey: `${domain.id}:${difficulty}`,
+          domainId: domain.id,
+          difficulty,
+          skills: domain.skills || [],
+          urgent: true,
+        },
+      });
+
+      return {
+        generating: true,
+        message: "Building question pool. This takes 30-60 seconds.",
+        remaining: limitCheck.remaining,
+      };
+    }
+
+    throw error;
+  }
 }
+
+// saveQuizResult remains unchanged
+// getAssessments remains unchanged
 
 export async function saveQuizResult(questions, answers, score) {
   const { userId } = await auth();
@@ -70,7 +205,7 @@ export async function saveQuizResult(questions, answers, score) {
   const questionResults = questions.map((q, index) => ({
     question: q.question,
     answer: q.correctAnswer,
-    userAnswer: answers[index],
+    userAnswer: answers[index] || "Not attempted", // Handle null answers
     isCorrect: q.correctAnswer === answers[index],
     explanation: q.explanation,
   }));
@@ -78,9 +213,11 @@ export async function saveQuizResult(questions, answers, score) {
   // Get wrong answers
   const wrongAnswers = questionResults.filter((q) => !q.isCorrect);
 
-  // Only generate improvement tips if there are wrong answers
+  // Only generate improvement tips if there are wrong answers AND quiz wasn't abandoned
   let improvementTip = null;
-  if (wrongAnswers.length > 0) {
+  const wasAbandoned = answers.every(a => a === null);
+
+  if (wrongAnswers.length > 0 && !wasAbandoned) {
     const wrongQuestionsText = wrongAnswers
       .map(
         (q) =>

@@ -1,5 +1,6 @@
+// quiz.jsx
 "use client";
-
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,12 +17,12 @@ import { generateQuiz, saveQuizResult } from "@/actions/interview";
 import QuizResult from "./quiz-result";
 import useFetch from "@/hooks/use-fetch";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
-export default function Quiz() {
+export default function Quiz({ initialRemaining }) {
   const router = useRouter();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
+  const [remainingAttempts, setRemainingAttempts] = useState(initialRemaining);
 
   const {
     loading: generatingQuiz,
@@ -36,11 +37,23 @@ export default function Quiz() {
     setData: setResultData,
   } = useFetch(saveQuizResult);
 
+  // Handle new response shape
   useEffect(() => {
-    if (quizData) {
-      setAnswers(new Array(quizData.length).fill(null));
+    if (quizData?.remaining !== undefined) {
+      setRemainingAttempts(quizData.remaining);
+    }
+
+    if (Array.isArray(quizData?.questions)) {
+      setAnswers(new Array(quizData.questions.length).fill(null));
     }
   }, [quizData]);
+
+  // Update remaining count when quiz result is saved
+  useEffect(() => {
+    if (resultData) {
+      setRemainingAttempts(prev => prev > 0 ? prev - 1 : 0);
+    }
+  }, [resultData]);
 
   const handleAnswer = (answer) => {
     const newAnswers = [...answers];
@@ -49,7 +62,7 @@ export default function Quiz() {
   };
 
   const handleNext = () => {
-    if (currentQuestion < quizData.length - 1) {
+    if (currentQuestion < quizData.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
       finishQuiz();
@@ -59,37 +72,56 @@ export default function Quiz() {
   const calculateScore = () => {
     let correct = 0;
     answers.forEach((answer, index) => {
-      if (answer === quizData[index].correctAnswer) {
+      if (answer === quizData.questions[index].correctAnswer) {
         correct++;
       }
     });
-    return (correct / quizData.length) * 100;
+    return (correct / quizData.questions.length) * 100;
   };
 
   const finishQuiz = async () => {
     const score = calculateScore();
     try {
-      await saveQuizResultFn(quizData, answers, score);
+      await saveQuizResultFn(quizData.questions, answers, score);
       toast.success("Quiz completed!");
     } catch (error) {
       toast.error(error.message || "Failed to save quiz results");
     }
   };
 
+  const quitQuiz = async () => {
+    // Confirmation dialog
+    const confirmed = window.confirm(
+      "Are you sure you want to quit? Your progress will be saved with current answers."
+    );
+
+    if (!confirmed) return;
+
+    // Fill remaining unanswered questions with null
+    const finalAnswers = [...answers];
+    for (let i = 0; i < quizData.questions.length; i++) {
+      if (finalAnswers[i] === null) {
+        finalAnswers[i] = null; // Keep null for unanswered
+      }
+    }
+
+    const score = calculateScore(); // Calculate based on answered questions
+
+    try {
+      await saveQuizResultFn(quizData.questions, finalAnswers, score);
+      toast.success("Quiz saved with partial answers");
+    } catch (error) {
+      toast.error("Failed to save quiz");
+    }
+  };
+
   const startNewQuiz = () => {
     setCurrentQuestion(0);
     setAnswers([]);
-    setShowExplanation(false);
-    generateQuizFn();
     setResultData(null);
   };
 
-  // if (generatingQuiz) {
-  //   return <BarLoader className="mt-4" width={"100%"} color="gray" />;
-  // }
-
-
-  // NEW: Handle "generating" state from cached response
+  // Handle "generating" state
   if (quizData?.generating) {
     return (
       <Card className="mx-2">
@@ -100,9 +132,14 @@ export default function Quiz() {
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <p className="text-muted-foreground">{quizData.message}</p>
+            {remainingAttempts !== null && (
+              <p className="text-sm text-muted-foreground">
+                Quizzes remaining today: {remainingAttempts}/10
+              </p>
+            )}
             <Button
               onClick={() => {
-                generateQuizFn(); // Retry
+                generateQuizFn("medium");
                 router.refresh();
               }}
               variant="outline"
@@ -119,33 +156,25 @@ export default function Quiz() {
   if (resultData) {
     return (
       <div className="mx-2">
-        <QuizResult result={resultData} onStartNew={startNewQuiz} />
+        {remainingAttempts !== null && remainingAttempts > 0 && (
+          <p className="text-sm text-muted-foreground mb-4">
+            Quizzes remaining today: {remainingAttempts}/10
+          </p>
+        )}
+        <QuizResult
+          result={resultData}
+          onStartNew={() => {
+            setResultData(null);
+            setCurrentQuestion(0);
+            setAnswers([]);
+          }}
+        />
       </div>
     );
   }
 
-  // if (!quizData) {
-  //   return (
-  //     <Card className="mx-2">
-  //       <CardHeader>
-  //         <CardTitle>Ready to test your knowledge?</CardTitle>
-  //       </CardHeader>
-  //       <CardContent>
-  //         <p className="text-muted-foreground">
-  //           This quiz contains 10 questions specific to your industry and
-  //           skills. Take your time and choose the best answer for each question.
-  //         </p>
-  //       </CardContent>
-  //       <CardFooter>
-  //         <Button onClick={generateQuizFn} className="w-full">
-  //           Start Quiz
-  //         </Button>
-  //       </CardFooter>
-  //     </Card>
-  //   );
-  // }
-
-  if (!quizData || !Array.isArray(quizData)) {
+  // Start screen
+  if (!quizData || !quizData.questions) {
     return (
       <Card className="mx-2">
         <CardHeader>
@@ -155,27 +184,70 @@ export default function Quiz() {
           <p className="text-muted-foreground">
             This quiz contains 10 questions specific to your industry and skills.
           </p>
+          {remainingAttempts !== null && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Quizzes remaining today: {remainingAttempts}/10
+            </p>
+          )}
         </CardContent>
         <CardFooter>
-          <Button onClick={generateQuizFn} className="w-full">
-            Start Quiz
+          <Button
+            onClick={() => generateQuizFn("medium")}
+            className="w-full"
+            disabled={generatingQuiz}
+          >
+            {generatingQuiz ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating Quiz...
+              </>
+            ) : (
+              "Start Quiz"
+            )}
           </Button>
         </CardFooter>
       </Card>
     );
   }
 
-  const question = quizData[currentQuestion];
+  // Show daily limit error
+  if (quizData?.error) {
+    return (
+      <Card className="mx-2">
+        <CardHeader>
+          <CardTitle>Daily Limit Reached</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">{quizData.message}</p>
+          <p className="text-sm mt-2">Attempts today: {quizData.attemptsToday}/10</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const question = quizData.questions[currentQuestion];
 
   return (
-    <Card className="mx-2">
+    <Card
+      className="mx-2"
+      onContextMenu={(e) => e.preventDefault()}
+      style={{ userSelect: 'none' }}
+    >
       <CardHeader>
         <CardTitle>
-          Question {currentQuestion + 1} of {quizData.length}
+          Question {currentQuestion + 1} of {quizData.questions.length}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-lg font-medium">{question.question}</p>
+        <div className="space-y-2">
+          {question.question.includes('```') || question.question.includes('javascript') ? (
+            <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+              <code>{question.question}</code>
+            </pre>
+          ) : (
+            <p className="text-lg font-medium whitespace-pre-wrap">{question.question}</p>
+          )}
+        </div>
         <RadioGroup
           onValueChange={handleAnswer}
           value={answers[currentQuestion]}
@@ -199,6 +271,14 @@ export default function Quiz() {
         </Button>
 
         <Button
+          onClick={quitQuiz}
+          variant="destructive"
+          disabled={savingResult}
+        >
+          Quit Quiz
+        </Button>
+
+        <Button
           onClick={handleNext}
           disabled={!answers[currentQuestion] || savingResult}
           className="ml-auto"
@@ -209,7 +289,7 @@ export default function Quiz() {
               Saving Results...
             </>
           ) : (
-            currentQuestion < quizData.length - 1 ? "Next Question" : "Finish Quiz"
+            currentQuestion < quizData.questions.length - 1 ? "Next Question" : "Finish Quiz"
           )}
         </Button>
       </CardFooter>

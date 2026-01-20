@@ -1,3 +1,4 @@
+// quiz-list.jsx
 "use client";
 
 import { useState } from "react";
@@ -43,7 +44,7 @@ export default function QuizList({ assessments }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {assessments?.map((assessment, i) => (
+            {/* {assessments?.map((assessment, i) => (
               <Card
                 key={assessment.id}
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -71,7 +72,46 @@ export default function QuizList({ assessments }) {
                   </CardContent>
                 )}
               </Card>
-            ))}
+            ))} */}
+            {assessments?.map((assessment, i) => {
+              const isAbandoned = assessment.quizScore === 0 &&
+                assessment.questions.every(q => q.userAnswer === "Not attempted");
+
+              return (
+                <Card
+                  key={assessment.id}
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => setSelectedQuiz(assessment)}
+                >
+                  <CardHeader>
+                    <CardTitle className="gradient-title text-2xl">
+                      Quiz {i + 1}
+                      {isAbandoned && (
+                        <span className="text-sm font-normal text-muted-foreground ml-2">
+                          (Abandoned)
+                        </span>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="flex justify-between w-full">
+                      <div>Score: {assessment.quizScore.toFixed(1)}%</div>
+                      <div>
+                        {format(
+                          new Date(assessment.createdAt),
+                          "MMMM dd, yyyy HH:mm"
+                        )}
+                      </div>
+                    </CardDescription>
+                  </CardHeader>
+                  {assessment.improvementTip && (
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        {assessment.improvementTip}
+                      </p>
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

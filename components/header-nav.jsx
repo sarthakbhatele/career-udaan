@@ -57,30 +57,28 @@ export function HeaderNav() {
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-
-                  {  /*// Add this to the dropdown menu items*/}
-
                     <DropdownMenuItem
                         onClick={() => handleNavigation("/domains")}
                         disabled={isPending}
                         className="cursor-pointer"
                     >
                         {isPending && pendingRoute === "/domains" ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         ) : (
-                            <Layers className="h-4 w-4" /> 
+                            <Layers className="h-4 w-4 mr-2" />
                         )}
                         My Domains
                     </DropdownMenuItem>
+
                     <DropdownMenuItem
                         onClick={() => handleNavigation("/resume")}
                         disabled={isPending}
                         className="cursor-pointer"
                     >
                         {isPending && pendingRoute === "/resume" ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         ) : (
-                            <FileText className="h-4 w-4" />
+                            <FileText className="h-4 w-4 mr-2" />
                         )}
                         Build Resume
                     </DropdownMenuItem>
@@ -91,9 +89,9 @@ export function HeaderNav() {
                         className="cursor-pointer"
                     >
                         {isPending && pendingRoute === "/ai-cover-letter" ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         ) : (
-                            <PenBox className="h-4 w-4" />
+                            <PenBox className="h-4 w-4 mr-2" />
                         )}
                         Cover Letter
                     </DropdownMenuItem>
@@ -104,9 +102,9 @@ export function HeaderNav() {
                         className="cursor-pointer"
                     >
                         {isPending && pendingRoute === "/interview" ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         ) : (
-                            <GraduationCap className="h-4 w-4" />
+                            <GraduationCap className="h-4 w-4 mr-2" />
                         )}
                         Interview Prep
                     </DropdownMenuItem>
