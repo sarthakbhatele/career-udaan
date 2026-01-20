@@ -1,7 +1,95 @@
+// import { Brain, Target, Trophy, Calendar } from "lucide-react";
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+// export default function StatsCards({ assessments, limitInfo }) {
+//   const getAverageScore = () => {
+//     if (!assessments?.length) return 0;
+//     const total = assessments.reduce(
+//       (sum, assessment) => sum + assessment.quizScore,
+//       0
+//     );
+//     return (total / assessments.length).toFixed(1);
+//   };
+
+//   const getLatestAssessment = () => {
+//     if (!assessments?.length) return null;
+//     return assessments[0];
+//   };
+
+//   const getTotalQuestions = () => {
+//     if (!assessments?.length) return 0;
+//     return assessments.reduce(
+//       (sum, assessment) => sum + assessment.questions.length,
+//       0
+//     );
+//   };
+
+//   return (
+//     <div className="grid gap-4 md:grid-cols-4"> {/* ✅ Changed from 3 to 4 */}
+//       <Card>
+//         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+//           <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+//           <Trophy className="h-4 w-4 text-muted-foreground" />
+//         </CardHeader>
+//         <CardContent>
+//           <div className="text-2xl font-bold">{getAverageScore()}%</div>
+//           <p className="text-xs text-muted-foreground">
+//             Across all assessments
+//           </p>
+//         </CardContent>
+//       </Card>
+
+//       <Card>
+//         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+//           <CardTitle className="text-sm font-medium">
+//             Questions Practiced
+//           </CardTitle>
+//           <Brain className="h-4 w-4 text-muted-foreground" />
+//         </CardHeader>
+//         <CardContent>
+//           <div className="text-2xl font-bold">{getTotalQuestions()}</div>
+//           <p className="text-xs text-muted-foreground">Total questions</p>
+//         </CardContent>
+//       </Card>
+
+//       <Card>
+//         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+//           <CardTitle className="text-sm font-medium">Latest Score</CardTitle>
+//           <Target className="h-4 w-4 text-muted-foreground" />
+//         </CardHeader>
+//         <CardContent>
+//           <div className="text-2xl font-bold">
+//             {getLatestAssessment()?.quizScore.toFixed(1) || 0}%
+//           </div>
+//           <p className="text-xs text-muted-foreground">Most recent quiz</p>
+//         </CardContent>
+//       </Card>
+
+//       {/* ✅ NEW: 4th Card - Quizzes Remaining */}
+//       <Card>
+//         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+//           <CardTitle className="text-sm font-medium">Quizzes Today</CardTitle>
+//           <Calendar className="h-4 w-4 text-muted-foreground" />
+//         </CardHeader>
+//         <CardContent>
+//           <div className="text-2xl font-bold">
+//             {limitInfo?.remaining || 0}/{limitInfo?.limit || 10}
+//           </div>
+//           <p className="text-xs text-muted-foreground">
+//             {limitInfo?.remaining === 0
+//               ? "Daily limit reached"
+//               : "Remaining today"}
+//           </p>
+//         </CardContent>
+//       </Card>
+//     </div>
+//   );
+// }
+
 import { Brain, Target, Trophy, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function StatsCards({ assessments, limitInfo }) {
+export default function StatsCards({ assessments, limitInfo, quizType = "standard" }) {
   const getAverageScore = () => {
     if (!assessments?.length) return 0;
     const total = assessments.reduce(
@@ -24,8 +112,10 @@ export default function StatsCards({ assessments, limitInfo }) {
     );
   };
 
+  const quizLabel = quizType === "custom" ? "Custom Quizzes" : "Standard Quizzes";
+
   return (
-    <div className="grid gap-4 md:grid-cols-4"> {/* ✅ Changed from 3 to 4 */}
+    <div className="grid gap-4 md:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Average Score</CardTitle>
@@ -34,7 +124,7 @@ export default function StatsCards({ assessments, limitInfo }) {
         <CardContent>
           <div className="text-2xl font-bold">{getAverageScore()}%</div>
           <p className="text-xs text-muted-foreground">
-            Across all assessments
+            Across all {quizLabel.toLowerCase()}
           </p>
         </CardContent>
       </Card>
@@ -65,10 +155,9 @@ export default function StatsCards({ assessments, limitInfo }) {
         </CardContent>
       </Card>
 
-      {/* ✅ NEW: 4th Card - Quizzes Remaining */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Quizzes Today</CardTitle>
+          <CardTitle className="text-sm font-medium">{quizLabel} Today</CardTitle>
           <Calendar className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>

@@ -69,6 +69,8 @@ model Assessment {
   id            String    @id @default(cuid())
   userId        String
   user          User      @relation(fields: [userId], references: [id])
+  quizType      String    @default("standard") // "standard" | "custom"
+  topic         String?   // Only for custom quizzes
   quizScore     Float     // Overall quiz score
   questions     Json[]    // Array of {question, answer, userAnswer, isCorrect}
   category      String    // "Technical", "Behavioral", etc.
@@ -76,7 +78,8 @@ model Assessment {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  @@index([userId])
+ @@index([userId])
+ @@index([userId, quizType])
 }
 
 model Resume {
@@ -229,7 +232,9 @@ model QuizAttempt {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   domainId  String
+  quizType    String   @default("standard") // "standard" | "custom"
+  topic       String?  // Only for custom quizzes
   attemptDate DateTime @default(now())
   
-  @@index([userId, attemptDate])
+  @@index([userId, quizType, attemptDate])
 }

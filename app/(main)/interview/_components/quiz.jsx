@@ -18,7 +18,7 @@ import QuizResult from "./quiz-result";
 import useFetch from "@/hooks/use-fetch";
 import { Loader2 } from "lucide-react";
 
-export default function Quiz({ initialRemaining }) {
+export default function Quiz({ initialRemaining, quizType = "standard" }) {
   const router = useRouter();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
@@ -79,36 +79,72 @@ export default function Quiz({ initialRemaining }) {
     return (correct / quizData.questions.length) * 100;
   };
 
+  // const finishQuiz = async () => {
+  //   const score = calculateScore();
+  //   try {
+  //     await saveQuizResultFn(quizData.questions, answers, score);
+  //     toast.success("Quiz completed!");
+  //   } catch (error) {
+  //     toast.error(error.message || "Failed to save quiz results");
+  //   }
+  // };
+
   const finishQuiz = async () => {
     const score = calculateScore();
     try {
-      await saveQuizResultFn(quizData.questions, answers, score);
+      await saveQuizResultFn(quizData.questions, answers, score, quizType);
       toast.success("Quiz completed!");
     } catch (error) {
       toast.error(error.message || "Failed to save quiz results");
     }
   };
 
+  // const quitQuiz = async () => {
+  //   // Confirmation dialog
+  //   const confirmed = window.confirm(
+  //     "Are you sure you want to quit? Your progress will be saved with current answers."
+  //   );
+
+  //   if (!confirmed) return;
+
+  //   // Fill remaining unanswered questions with null
+  //   const finalAnswers = [...answers];
+  //   for (let i = 0; i < quizData.questions.length; i++) {
+  //     if (finalAnswers[i] === null) {
+  //       finalAnswers[i] = null; // Keep null for unanswered
+  //     }
+  //   }
+
+  //   const score = calculateScore(); // Calculate based on answered questions
+
+  //   try {
+  //     await saveQuizResultFn(quizData.questions, finalAnswers, score);
+  //     toast.success("Quiz saved with partial answers");
+  //   } catch (error) {
+  //     toast.error("Failed to save quiz");
+  //   }
+  // };
+
+  
+  // Update quitQuiz to pass quizType
   const quitQuiz = async () => {
-    // Confirmation dialog
     const confirmed = window.confirm(
       "Are you sure you want to quit? Your progress will be saved with current answers."
     );
 
     if (!confirmed) return;
 
-    // Fill remaining unanswered questions with null
     const finalAnswers = [...answers];
     for (let i = 0; i < quizData.questions.length; i++) {
       if (finalAnswers[i] === null) {
-        finalAnswers[i] = null; // Keep null for unanswered
+        finalAnswers[i] = null;
       }
     }
 
-    const score = calculateScore(); // Calculate based on answered questions
+    const score = calculateScore();
 
     try {
-      await saveQuizResultFn(quizData.questions, finalAnswers, score);
+      await saveQuizResultFn(quizData.questions, finalAnswers, score, quizType);
       toast.success("Quiz saved with partial answers");
     } catch (error) {
       toast.error("Failed to save quiz");

@@ -1,10 +1,145 @@
-// quiz-list.jsx
+// // quiz-list.jsx
+// "use client";
+
+// import { useState } from "react";
+// import { format } from "date-fns";
+// import { useRouter } from "next/navigation";
+// import { Button } from "@/components/ui/button";
+// import {
+//   Card,
+//   CardContent,
+//   CardDescription,
+//   CardHeader,
+//   CardTitle,
+// } from "@/components/ui/card";
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogHeader,
+//   DialogTitle,
+// } from "@/components/ui/dialog";
+// import QuizResult from "./quiz-result";
+
+// export default function QuizList({ assessments }) {
+//   const router = useRouter();
+//   const [selectedQuiz, setSelectedQuiz] = useState(null);
+
+//   return (
+//     <>
+//       <Card>
+//         <CardHeader>
+//           <div className="flex items-center justify-between">
+//             <div>
+//               <CardTitle className="gradient-title text-3xl md:text-4xl">
+//                 Recent Quizzes
+//               </CardTitle>
+//               <CardDescription>
+//                 Review your past quiz performance
+//               </CardDescription>
+//             </div>
+//             <Button onClick={() => router.push("/interview/mock")}>
+//               Start New Quiz
+//             </Button>
+//           </div>
+//         </CardHeader>
+//         <CardContent>
+//           <div className="space-y-4">
+//             {/* {assessments?.map((assessment, i) => (
+//               <Card
+//                 key={assessment.id}
+//                 className="cursor-pointer hover:bg-muted/50 transition-colors"
+//                 onClick={() => setSelectedQuiz(assessment)}
+//               >
+//                 <CardHeader>
+//                   <CardTitle className="gradient-title text-2xl">
+//                     Quiz {i + 1}
+//                   </CardTitle>
+//                   <CardDescription className="flex justify-between w-full">
+//                     <div>Score: {assessment.quizScore.toFixed(1)}%</div>
+//                     <div>
+//                       {format(
+//                         new Date(assessment.createdAt),
+//                         "MMMM dd, yyyy HH:mm"
+//                       )}
+//                     </div>
+//                   </CardDescription>
+//                 </CardHeader>
+//                 {assessment.improvementTip && (
+//                   <CardContent>
+//                     <p className="text-sm text-muted-foreground">
+//                       {assessment.improvementTip}
+//                     </p>
+//                   </CardContent>
+//                 )}
+//               </Card>
+//             ))} */}
+//             {assessments?.map((assessment, i) => {
+//               const isAbandoned = assessment.quizScore === 0 &&
+//                 assessment.questions.every(q => q.userAnswer === "Not attempted");
+
+//               return (
+//                 <Card
+//                   key={assessment.id}
+//                   className="cursor-pointer hover:bg-muted/50 transition-colors"
+//                   onClick={() => setSelectedQuiz(assessment)}
+//                 >
+//                   <CardHeader>
+//                     <CardTitle className="gradient-title text-2xl">
+//                       Quiz {i + 1}
+//                       {isAbandoned && (
+//                         <span className="text-sm font-normal text-muted-foreground ml-2">
+//                           (Abandoned)
+//                         </span>
+//                       )}
+//                     </CardTitle>
+//                     <CardDescription className="flex justify-between w-full">
+//                       <div>Score: {assessment.quizScore.toFixed(1)}%</div>
+//                       <div>
+//                         {format(
+//                           new Date(assessment.createdAt),
+//                           "MMMM dd, yyyy HH:mm"
+//                         )}
+//                       </div>
+//                     </CardDescription>
+//                   </CardHeader>
+//                   {assessment.improvementTip && (
+//                     <CardContent>
+//                       <p className="text-sm text-muted-foreground">
+//                         {assessment.improvementTip}
+//                       </p>
+//                     </CardContent>
+//                   )}
+//                 </Card>
+//               );
+//             })}
+//           </div>
+//         </CardContent>
+//       </Card>
+
+//       <Dialog open={!!selectedQuiz} onOpenChange={() => setSelectedQuiz(null)}>
+//         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+//           <DialogHeader>
+//             <DialogTitle></DialogTitle>
+//           </DialogHeader>
+//           <QuizResult
+//             result={selectedQuiz}
+//             hideStartNew
+//             onStartNew={() => router.push("/interview/mock")}
+//           />
+//         </DialogContent>
+//       </Dialog>
+//     </>
+//   );
+// }
+
+
 "use client";
 
 import { useState } from "react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -20,9 +155,13 @@ import {
 } from "@/components/ui/dialog";
 import QuizResult from "./quiz-result";
 
-export default function QuizList({ assessments }) {
+export default function QuizList({ assessments, type = "standard" }) {
   const router = useRouter();
   const [selectedQuiz, setSelectedQuiz] = useState(null);
+
+  const getQuizRoute = () => {
+    return type === "custom" ? "/interview/mock/custom" : "/interview/mock/standard";
+  };
 
   return (
     <>
@@ -31,48 +170,19 @@ export default function QuizList({ assessments }) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="gradient-title text-3xl md:text-4xl">
-                Recent Quizzes
+                Recent {type === "custom" ? "Custom" : "Standard"} Quizzes
               </CardTitle>
               <CardDescription>
                 Review your past quiz performance
               </CardDescription>
             </div>
-            <Button onClick={() => router.push("/interview/mock")}>
-              Start New Quiz
+            <Button onClick={() => router.push(getQuizRoute())}>
+              Start New {type === "custom" ? "Custom" : "Standard"} Quiz
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* {assessments?.map((assessment, i) => (
-              <Card
-                key={assessment.id}
-                className="cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => setSelectedQuiz(assessment)}
-              >
-                <CardHeader>
-                  <CardTitle className="gradient-title text-2xl">
-                    Quiz {i + 1}
-                  </CardTitle>
-                  <CardDescription className="flex justify-between w-full">
-                    <div>Score: {assessment.quizScore.toFixed(1)}%</div>
-                    <div>
-                      {format(
-                        new Date(assessment.createdAt),
-                        "MMMM dd, yyyy HH:mm"
-                      )}
-                    </div>
-                  </CardDescription>
-                </CardHeader>
-                {assessment.improvementTip && (
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      {assessment.improvementTip}
-                    </p>
-                  </CardContent>
-                )}
-              </Card>
-            ))} */}
             {assessments?.map((assessment, i) => {
               const isAbandoned = assessment.quizScore === 0 &&
                 assessment.questions.every(q => q.userAnswer === "Not attempted");
@@ -84,20 +194,34 @@ export default function QuizList({ assessments }) {
                   onClick={() => setSelectedQuiz(assessment)}
                 >
                   <CardHeader>
-                    <CardTitle className="gradient-title text-2xl">
-                      Quiz {i + 1}
-                      {isAbandoned && (
-                        <span className="text-sm font-normal text-muted-foreground ml-2">
-                          (Abandoned)
-                        </span>
-                      )}
-                    </CardTitle>
-                    <CardDescription className="flex justify-between w-full">
-                      <div>Score: {assessment.quizScore.toFixed(1)}%</div>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="gradient-title text-2xl">
+                          {type === "custom" ? "Custom Quiz" : "Quiz"} {i + 1}
+                          {isAbandoned && (
+                            <span className="text-sm font-normal text-muted-foreground ml-2">
+                              (Abandoned)
+                            </span>
+                          )}
+                        </CardTitle>
+                        {assessment.topic && (
+                          <Badge variant="outline" className="mt-2">
+                            Topic: {assessment.topic}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold">
+                          {assessment.quizScore.toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+                    <CardDescription className="flex justify-between w-full mt-2">
+                      <div>{assessment.questions.length} questions</div>
                       <div>
                         {format(
                           new Date(assessment.createdAt),
-                          "MMMM dd, yyyy HH:mm"
+                          "MMM dd, yyyy HH:mm"
                         )}
                       </div>
                     </CardDescription>
@@ -124,7 +248,7 @@ export default function QuizList({ assessments }) {
           <QuizResult
             result={selectedQuiz}
             hideStartNew
-            onStartNew={() => router.push("/interview/mock")}
+            onStartNew={() => router.push(getQuizRoute())}
           />
         </DialogContent>
       </Dialog>

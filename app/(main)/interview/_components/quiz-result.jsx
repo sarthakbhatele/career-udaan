@@ -1,10 +1,125 @@
-// quiz-result.jsx
+// // quiz-result.jsx
+// "use client";
+
+// import { Trophy, CheckCircle2, XCircle } from "lucide-react";
+// import { Button } from "@/components/ui/button";
+// import { CardContent, CardFooter } from "@/components/ui/card";
+// import { Progress } from "@/components/ui/progress";
+// import { useRouter } from "next/navigation";
+
+// export default function QuizResult({
+//   result,
+//   hideStartNew = false,
+//   onStartNew,
+// }) {
+//   const router = useRouter();
+//   if (!result) return null;
+
+//   return (
+//     <div className="mx-auto">
+//       <h1 className="flex items-center gap-2 text-3xl gradient-title">
+//         <Trophy className="h-6 w-6 text-yellow-500" />
+//         Quiz Results
+//       </h1>
+
+//       <CardContent className="space-y-6">
+//         {/* Score Overview */}
+//         <div className="text-center space-y-2">
+//           <h3 className="text-2xl font-bold">{result.quizScore.toFixed(1)}%</h3>
+//           <Progress value={result.quizScore} className="w-full" />
+//         </div>
+
+//         {/* Improvement Tip */}
+//         {result.improvementTip && (
+//           <div className="bg-muted p-4 rounded-lg">
+//             <p className="font-medium">Improvement Tip:</p>
+//             <p className="text-muted-foreground">{result.improvementTip}</p>
+//           </div>
+//         )}
+
+//         {/* Questions Review */}
+//         <div className="space-y-4">
+//           <h3 className="font-medium">Question Review</h3>
+//           {/* {result.questions.map((q, index) => (
+//             <div key={index} className="border rounded-lg p-4 space-y-2">
+//               <div className="flex items-start justify-between gap-2">
+//                 <p className="font-medium">{q.question}</p>
+//                 {q.isCorrect ? (
+//                   <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+//                 ) : (
+//                   <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+//                 )}
+//               </div>
+//               <div className="text-sm text-muted-foreground">
+//                 <p>Your answer: {q.userAnswer}</p>
+//                 {!q.isCorrect && <p>Correct answer: {q.answer}</p>}
+//               </div>
+//               <div className="text-sm bg-muted p-2 rounded">
+//                 <p className="font-medium">Explanation:</p>
+//                 <p>{q.explanation}</p>
+//               </div>
+//             </div>
+//           ))} */}
+//           {result.questions.map((q, index) => {
+//             const isNotAttempted = q.userAnswer === "Not attempted";
+
+//             return (
+//               <div key={index} className="border rounded-lg p-4 space-y-2">
+//                 <div className="flex items-start justify-between gap-2">
+//                   <p className="font-medium">{q.question}</p>
+//                   {isNotAttempted ? (
+//                     <div className="h-5 w-5 rounded-full border-2 border-gray-400 flex-shrink-0" />
+//                   ) : q.isCorrect ? (
+//                     <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+//                   ) : (
+//                     <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+//                   )}
+//                 </div>
+//                 <div className="text-sm text-muted-foreground">
+//                   <p className={isNotAttempted ? "text-gray-400" : ""}>
+//                     Your answer: {q.userAnswer}
+//                   </p>
+//                   {!q.isCorrect && !isNotAttempted && (
+//                     <p>Correct answer: {q.answer}</p>
+//                   )}
+//                 </div>
+//                 {!isNotAttempted && (
+//                   <div className="text-sm bg-muted p-2 rounded">
+//                     <p className="font-medium">Explanation:</p>
+//                     <p>{q.explanation}</p>
+//                   </div>
+//                 )}
+//               </div>
+//             );
+//           })}
+//         </div>
+//       </CardContent>
+
+//       {!hideStartNew && (
+//         <CardFooter>
+//           {/* <Button onClick={onStartNew} className="w-full">
+//             Start New Quiz
+//           </Button> */}
+//           <Button
+//             onClick={() => router.push("/interview")} // CHANGED
+//             className="w-full"
+//           >
+//             Back to Interview Prep
+//           </Button>
+//         </CardFooter>
+//       )}
+//     </div>
+//   );
+// }
+
+
 "use client";
 
 import { Trophy, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 
 export default function QuizResult({
@@ -20,16 +135,22 @@ export default function QuizResult({
       <h1 className="flex items-center gap-2 text-3xl gradient-title">
         <Trophy className="h-6 w-6 text-yellow-500" />
         Quiz Results
+        {result.topic && (
+          <Badge variant="outline" className="ml-2">
+            {result.topic}
+          </Badge>
+        )}
       </h1>
 
       <CardContent className="space-y-6">
-        {/* Score Overview */}
         <div className="text-center space-y-2">
           <h3 className="text-2xl font-bold">{result.quizScore.toFixed(1)}%</h3>
           <Progress value={result.quizScore} className="w-full" />
+          <p className="text-sm text-muted-foreground">
+            {result.quizType === "custom" ? "Custom Practice Quiz" : "Standard Interview Quiz"}
+          </p>
         </div>
 
-        {/* Improvement Tip */}
         {result.improvementTip && (
           <div className="bg-muted p-4 rounded-lg">
             <p className="font-medium">Improvement Tip:</p>
@@ -37,36 +158,22 @@ export default function QuizResult({
           </div>
         )}
 
-        {/* Questions Review */}
         <div className="space-y-4">
           <h3 className="font-medium">Question Review</h3>
-          {/* {result.questions.map((q, index) => (
-            <div key={index} className="border rounded-lg p-4 space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-medium">{q.question}</p>
-                {q.isCorrect ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                ) : (
-                  <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-                )}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                <p>Your answer: {q.userAnswer}</p>
-                {!q.isCorrect && <p>Correct answer: {q.answer}</p>}
-              </div>
-              <div className="text-sm bg-muted p-2 rounded">
-                <p className="font-medium">Explanation:</p>
-                <p>{q.explanation}</p>
-              </div>
-            </div>
-          ))} */}
           {result.questions.map((q, index) => {
             const isNotAttempted = q.userAnswer === "Not attempted";
 
             return (
               <div key={index} className="border rounded-lg p-4 space-y-2">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium">{q.question}</p>
+                  <div className="flex-1">
+                    <p className="font-medium">{q.question}</p>
+                    {q.seenBefore && (
+                      <Badge variant="secondary" className="text-xs mt-1">
+                        Previously Practiced
+                      </Badge>
+                    )}
+                  </div>
                   {isNotAttempted ? (
                     <div className="h-5 w-5 rounded-full border-2 border-gray-400 flex-shrink-0" />
                   ) : q.isCorrect ? (
@@ -97,11 +204,8 @@ export default function QuizResult({
 
       {!hideStartNew && (
         <CardFooter>
-          {/* <Button onClick={onStartNew} className="w-full">
-            Start New Quiz
-          </Button> */}
           <Button
-            onClick={() => router.push("/interview")} // CHANGED
+            onClick={() => router.push("/interview")}
             className="w-full"
           >
             Back to Interview Prep
