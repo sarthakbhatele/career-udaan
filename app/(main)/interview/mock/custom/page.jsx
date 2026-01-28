@@ -13,9 +13,19 @@ export default async function CustomQuizPage() {
     const suggestedTopics = domain.skills?.slice(0, 8) || [];
 
     return (
-        <CustomQuizClient
-            suggestedTopics={suggestedTopics}
-            limitInfo={limitInfo}
-        />
+        <div className="container mx-auto space-y-4 py-6">
+            <div className="flex flex-col space-y-1">
+                <div>
+                    <h1 className="text-6xl font-bold gradient-title">Custom Practice Quiz</h1>
+                    <p className="text-muted-foreground">
+                        Choose a topic to focus your practice session
+                    </p>
+                </div>
+            </div>
+            <CustomQuizClient
+                suggestedTopics={suggestedTopics}
+                limitInfo={limitInfo}
+            />
+        </div>
     );
 }

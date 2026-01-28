@@ -52,18 +52,20 @@ export default function CustomQuizClient({ suggestedTopics, limitInfo }) {
     }
 
     return (
-        <div className="container mx-auto py-6 px-4 max-w-3xl">
-            <div className="mb-6">
+        <div className="mx-auto space-y-4 py-6">
+            {/* <div className="mb-6">
                 <h1 className="text-5xl md:text-6xl font-bold gradient-title mb-2">
                     Custom Practice Quiz
                 </h1>
                 <p className="text-muted-foreground">
                     Choose a topic to focus your practice session
                 </p>
-                <Badge variant="outline" className="mt-2">
-                    {limitInfo.remaining}/{limitInfo.limit} attempts remaining today
-                </Badge>
-            </div>
+                
+            </div> */}
+
+            <Badge variant="outline" className="text-base">
+                {limitInfo.remaining}/{limitInfo.limit} attempts remaining today
+            </Badge>
 
             <Card>
                 <CardHeader>
